@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -11,31 +11,22 @@ import { ArrowLeft, Upload, Save, FileText, Link as LinkIcon, Image as ImageIcon
 import { Modal } from '../components/Modal';
 import { UpdateProgressForm } from '../components/UpdateProgressForm';
 import { cn } from '../utils/cn';
+import { useRealtimeTask, useRealtimeLogs } from '../hooks/useRealtime';
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const { data: task, isLoading } = useQuery({
-    queryKey: ['tasks', id],
-    queryFn: () => api.getTask(id!),
-    enabled: !!id,
-  });
+  const { task, isLoading: isTaskLoading } = useRealtimeTask(id);
+  const { logs, isLoading: isLogsLoading } = useRealtimeLogs(id);
 
-  const { data: logs = [] } = useQuery({
-    queryKey: ['logs', id],
-    queryFn: () => api.getLogs(id!),
-    enabled: !!id,
-  });
+  const isLoading = isTaskLoading || isLogsLoading;
 
   const updateMutation = useMutation({
     mutationFn: (updates: any) => api.updateTask(id!, updates),
     onSuccess: (updatedTask, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', id] });
-      queryClient.invalidateQueries({ queryKey: ['logs', id] });
       setIsEditing(false);
       
       // Log progress update

@@ -1,22 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { LayoutDashboard, ListTodo, History, Settings, Bell, LogOut, User as UserIcon, ChevronRight, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { format } from 'date-fns';
+import { useRealtimeNotifications } from '../hooks/useRealtime';
 
 export default function MainLayout() {
-  const { user, logout, loginAsAdmin, loginAsViewer } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const location = useLocation();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: () => api.getNotifications(),
-  });
+  const { notifications } = useRealtimeNotifications(user?.id);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -98,12 +94,6 @@ export default function MainLayout() {
               <p className="text-sm font-semibold text-slate-200 truncate">{user?.name}</p>
               <p className="text-[11px] text-slate-400 truncate font-medium">{user?.role === 'admin' ? 'Administrator' : 'Viewer'}</p>
             </div>
-          </div>
-          
-          {/* Demo role switcher */}
-          <div className="flex gap-2 mb-3">
-            <button onClick={loginAsAdmin} className={cn("flex-1 text-[10px] uppercase tracking-wider font-semibold py-1.5 rounded transition-colors", user?.role === 'admin' ? "bg-cyan-500/20 text-cyan-400" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>Admin</button>
-            <button onClick={loginAsViewer} className={cn("flex-1 text-[10px] uppercase tracking-wider font-semibold py-1.5 rounded transition-colors", user?.role === 'viewer' ? "bg-cyan-500/20 text-cyan-400" : "bg-slate-800 text-slate-400 hover:bg-slate-700")}>Viewer</button>
           </div>
 
           <button 

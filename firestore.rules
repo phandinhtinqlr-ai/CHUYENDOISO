@@ -1,0 +1,187 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: tasks
+    // Document ID: auto-generated
+    // Fields:
+    //   - code: string
+    //   - department: string
+    //   - name: string
+    //   - type: string
+    //   - scope: string
+    //   - systemForm: string
+    //   - assignee: string
+    //   - startDate: string
+    //   - endDate: string
+    //   - status: string
+    //   - progress: number
+    //   - updates: string (optional)
+    //   - finalResult: string (optional)
+    //   - createdAt: string
+    //   - updatedAt: string
+    //
+    // Collection: logs
+    // Document ID: auto-generated
+    // Fields:
+    //   - taskId: string
+    //   - userId: string
+    //   - userName: string
+    //   - action: string
+    //   - before: string (optional)
+    //   - after: string (optional)
+    //   - createdAt: string
+    //
+    // Collection: notifications
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string
+    //   - title: string
+    //   - message: string
+    //   - isRead: boolean
+    //   - type: string
+    //   - createdAt: string
+    //   - link: string (optional)
+    //
+    // Collection: configs
+    // Document ID: auto-generated
+    // Fields:
+    //   - type: string
+    //   - value: string
+    //   - label: string
+    //   - isActive: boolean
+    //   - order: number (optional)
+    //
+    // Collection: users
+    // Document ID: uid
+    // Fields:
+    //   - role: string
+    //   - email: string
+    //   - name: string
+    //
+    // Collection: counters
+    // Document ID: string
+    // Fields:
+    //   - count: number
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "phandinhtinqlr@gmail.com" && request.auth.token.email_verified == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isViewer() {
+      return isAuthenticated() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'viewer'
+      );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidTask() {
+      return hasRequiredFields(['code', 'department', 'name', 'type', 'scope', 'systemForm', 'assignee', 'startDate', 'endDate', 'status', 'progress', 'createdAt', 'updatedAt']) &&
+             request.resource.data.code is string && request.resource.data.code.size() < 50 &&
+             request.resource.data.name is string && request.resource.data.name.size() < 200 &&
+             request.resource.data.department is string && request.resource.data.department.size() < 100 &&
+             request.resource.data.type is string && request.resource.data.type.size() < 100 &&
+             request.resource.data.scope is string && request.resource.data.scope.size() < 100 &&
+             request.resource.data.systemForm is string && request.resource.data.systemForm.size() < 100 &&
+             request.resource.data.assignee is string && request.resource.data.assignee.size() < 100 &&
+             request.resource.data.startDate is string && request.resource.data.startDate.size() < 50 &&
+             request.resource.data.endDate is string && request.resource.data.endDate.size() < 50 &&
+             request.resource.data.status is string && request.resource.data.status.size() < 50 &&
+             request.resource.data.progress is number && request.resource.data.progress >= 0 && request.resource.data.progress <= 100 &&
+             request.resource.data.createdAt is string && request.resource.data.createdAt.size() < 50 &&
+             request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() < 50;
+    }
+
+    function isValidLog() {
+      return hasRequiredFields(['taskId', 'userId', 'userName', 'action', 'createdAt']) &&
+             request.resource.data.taskId is string && request.resource.data.taskId.size() < 100 &&
+             request.resource.data.userId is string && request.resource.data.userId.size() < 100 &&
+             request.resource.data.userName is string && request.resource.data.userName.size() < 100 &&
+             request.resource.data.action is string && request.resource.data.action.size() < 200 &&
+             request.resource.data.createdAt is string && request.resource.data.createdAt.size() < 50;
+    }
+
+    function isValidConfig() {
+      return hasRequiredFields(['type', 'value', 'label', 'isActive']) &&
+             request.resource.data.type is string && request.resource.data.type.size() < 50 &&
+             request.resource.data.value is string && request.resource.data.value.size() < 200 &&
+             request.resource.data.label is string && request.resource.data.label.size() < 200 &&
+             request.resource.data.isActive is bool;
+    }
+
+    function isValidNotification() {
+      return hasRequiredFields(['userId', 'title', 'message', 'isRead', 'type', 'createdAt']) &&
+             request.resource.data.userId is string && request.resource.data.userId.size() < 100 &&
+             request.resource.data.title is string && request.resource.data.title.size() < 200 &&
+             request.resource.data.message is string && request.resource.data.message.size() < 1000 &&
+             request.resource.data.isRead is bool &&
+             request.resource.data.type is string && request.resource.data.type in ['info', 'success', 'warning', 'error'] &&
+             request.resource.data.createdAt is string && request.resource.data.createdAt.size() < 50;
+    }
+
+    function isValidUser() {
+      return hasRequiredFields(['role', 'email', 'name']) &&
+             request.resource.data.role is string && request.resource.data.role in ['admin', 'viewer'] &&
+             request.resource.data.email is string && request.resource.data.email.size() < 100 &&
+             request.resource.data.name is string && request.resource.data.name.size() < 100;
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidTask();
+      allow update: if isAdmin() && isValidTask();
+      allow delete: if isAdmin();
+    }
+
+    match /logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidLog();
+      allow update: if isAdmin() && isValidLog();
+      allow delete: if isAdmin();
+    }
+
+    match /configs/{configId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidConfig();
+      allow update: if isAdmin() && isValidConfig();
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAdmin() && isValidNotification();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && isValidNotification();
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    match /counters/{counterId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && hasRequiredFields(['count']) && request.resource.data.count is number;
+      allow update: if isAdmin() && hasRequiredFields(['count']) && request.resource.data.count is number;
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidUser() && (isAdmin() || (request.auth.uid == userId && request.resource.data.role == 'viewer'));
+      allow update: if isAuthenticated() && isValidUser() && (isAdmin() || (request.auth.uid == userId && request.resource.data.role == resource.data.role));
+      allow delete: if isAdmin();
+    }
+  }
+}

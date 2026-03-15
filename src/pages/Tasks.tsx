@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent } from '../components/ui/card';
@@ -11,6 +11,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Modal } from '../components/Modal';
 import { TaskForm } from '../components/TaskForm';
 import { cn } from '../utils/cn';
+import { useRealtimeTasks, useRealtimeConfigs } from '../hooks/useRealtime';
 
 export default function Tasks() {
   const { user } = useAuthStore();
@@ -19,12 +20,10 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => api.getTasks(),
-  });
+  const { tasks, isLoading } = useRealtimeTasks();
+  const { configs } = useRealtimeConfigs();
+  const statusOptions = configs.filter(c => c.type === 'status' && c.isActive);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => api.createTask({
@@ -35,7 +34,6 @@ export default function Tasks() {
       finalResult: '',
     }),
     onSuccess: (newTask) => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setIsCreateModalOpen(false);
       api.createLog({
         taskId: newTask.id,
@@ -51,7 +49,6 @@ export default function Tasks() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.deleteTask(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       setTaskToDelete(null);
     },
   });
@@ -123,10 +120,18 @@ export default function Tasks() {
                 onChange={(e) => setSearchParams(e.target.value ? { status: e.target.value } : {})}
               >
                 <option value="">Tất cả</option>
-                <option value="Chưa bắt đầu">Chưa bắt đầu</option>
-                <option value="Đang triển khai">Đang triển khai</option>
-                <option value="Hoàn thành">Hoàn thành</option>
-                <option value="Quá hạn">Quá hạn</option>
+                {statusOptions.length > 0 ? (
+                  statusOptions.map(opt => (
+                    <option key={opt.id} value={opt.label}>{opt.label}</option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Chưa bắt đầu">Chưa bắt đầu</option>
+                    <option value="Đang triển khai">Đang triển khai</option>
+                    <option value="Hoàn thành">Hoàn thành</option>
+                    <option value="Quá hạn">Quá hạn</option>
+                  </>
+                )}
               </select>
             </div>
           </div>

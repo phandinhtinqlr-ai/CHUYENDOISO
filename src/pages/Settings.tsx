@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Settings as SettingsIcon, Plus, Trash2, Edit2, Search, SlidersHorizontal } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { useRealtimeConfigs } from '../hooks/useRealtime';
 
 export default function Settings() {
-  const queryClient = useQueryClient();
-  const { data: configs = [], isLoading } = useQuery({
-    queryKey: ['configs'],
-    queryFn: () => api.getConfigs(),
-  });
+  const { configs, isLoading } = useRealtimeConfigs();
 
   const [activeTab, setActiveTab] = useState('department');
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +30,6 @@ export default function Settings() {
   const createMutation = useMutation({
     mutationFn: (data: any) => api.createConfig(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configs'] });
       setIsModalOpen(false);
     },
   });
@@ -41,7 +37,6 @@ export default function Settings() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string, data: any }) => api.updateConfig(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configs'] });
       setIsModalOpen(false);
     },
   });
@@ -49,7 +44,6 @@ export default function Settings() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.deleteConfig(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['configs'] });
       setConfigToDelete(null);
     },
   });

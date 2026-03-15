@@ -1,15 +1,11 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
 import { Card, CardContent } from '../components/ui/card';
 import { format } from 'date-fns';
 import { History, Activity } from 'lucide-react';
+import { useRealtimeLogs } from '../hooks/useRealtime';
 
 export default function ActivityLogs() {
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['logs'],
-    queryFn: () => api.getLogs(),
-  });
+  const { logs, isLoading } = useRealtimeLogs();
 
   if (isLoading) {
     return (

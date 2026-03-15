@@ -1,10 +1,9 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Clock, AlertCircle, ListTodo, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { useRealtimeTasks } from '../hooks/useRealtime';
 
 const COLORS = ['#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
 
@@ -26,10 +25,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => api.getTasks(),
-  });
+  const { tasks, isLoading } = useRealtimeTasks();
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-full">

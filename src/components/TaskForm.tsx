@@ -2,10 +2,9 @@ import React from 'react';
 import { useForm as useRHForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../services/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useRealtimeConfigs } from '../hooks/useRealtime';
 
 const schema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên công việc'),
@@ -27,10 +26,7 @@ interface Props {
 }
 
 export function TaskForm({ onSubmit, onCancel, initialData }: Props) {
-  const { data: configs = [] } = useQuery({
-    queryKey: ['configs'],
-    queryFn: () => api.getConfigs(),
-  });
+  const { configs } = useRealtimeConfigs();
 
   const { register, handleSubmit, formState: { errors } } = useRHForm<FormData>({
     resolver: zodResolver(schema),

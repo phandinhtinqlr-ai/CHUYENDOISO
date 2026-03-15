@@ -1,0 +1,101 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A task in the system",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "department": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "scope": { "type": "string" },
+        "systemForm": { "type": "string" },
+        "assignee": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "status": { "type": "string" },
+        "progress": { "type": "number" },
+        "updates": { "type": "string" },
+        "finalResult": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["code", "name", "department", "type", "scope", "systemForm", "assignee", "startDate", "endDate", "status", "progress", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Log of activities on tasks",
+      "type": "object",
+      "properties": {
+        "taskId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "action": { "type": "string" },
+        "before": { "type": "string" },
+        "after": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["taskId", "userId", "userName", "action", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notifications for users",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+        "createdAt": { "type": "string" },
+        "link": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "isRead", "type", "createdAt"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "System configuration options",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "value": { "type": "string" },
+        "label": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "order": { "type": "number" }
+      },
+      "required": ["type", "value", "label", "isActive"]
+    },
+    "Counter": {
+      "title": "Counter",
+      "description": "Counter for generating task codes",
+      "type": "object",
+      "properties": {
+        "count": { "type": "number" }
+      },
+      "required": ["count"]
+    }
+  },
+  "firestore": {
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Collection of tasks"
+    },
+    "/logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Collection of activity logs"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Collection of notifications"
+    },
+    "/configs/{configId}": {
+      "schema": { "$ref": "#/entities/SystemConfig" },
+      "description": "Collection of system configs"
+    },
+    "/counters/{counterId}": {
+      "schema": { "$ref": "#/entities/Counter" },
+      "description": "Collection of counters"
+    }
+  }
+}

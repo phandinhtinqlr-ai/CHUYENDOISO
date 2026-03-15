@@ -2,6 +2,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { useRealtimeConfigs } from '../hooks/useRealtime';
 
 interface Props {
   onSubmit: (data: any) => void;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function UpdateProgressForm({ onSubmit, onCancel, initialData }: Props) {
+  const { configs } = useRealtimeConfigs();
   const { register, handleSubmit } = useForm({
     defaultValues: {
       progress: initialData.progress,
@@ -17,6 +19,8 @@ export function UpdateProgressForm({ onSubmit, onCancel, initialData }: Props) {
       updates: initialData.updates || '',
     },
   });
+
+  const statusOptions = configs.filter(c => c.type === 'status' && c.isActive);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -37,10 +41,18 @@ export function UpdateProgressForm({ onSubmit, onCancel, initialData }: Props) {
             {...register('status')} 
             className="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-colors"
           >
-            <option value="Chưa bắt đầu">Chưa bắt đầu</option>
-            <option value="Đang triển khai">Đang triển khai</option>
-            <option value="Hoàn thành">Hoàn thành</option>
-            <option value="Quá hạn">Quá hạn</option>
+            {statusOptions.length > 0 ? (
+              statusOptions.map(opt => (
+                <option key={opt.id} value={opt.label}>{opt.label}</option>
+              ))
+            ) : (
+              <>
+                <option value="Chưa bắt đầu">Chưa bắt đầu</option>
+                <option value="Đang triển khai">Đang triển khai</option>
+                <option value="Hoàn thành">Hoàn thành</option>
+                <option value="Quá hạn">Quá hạn</option>
+              </>
+            )}
           </select>
         </div>
       </div>
